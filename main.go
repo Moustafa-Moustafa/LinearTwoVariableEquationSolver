@@ -10,22 +10,43 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Solve the linear equation
-func Solve(w http.ResponseWriter, r *http.Request) {
+// Solve the system of linear equations
+func solve(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
+	sol, err := solveEquations(params["equation1"], params["equation2"])
+
+	if err != nil {
+		fmt.Fprint(w, err)
+		return
+	}
+
+	fmt.Fprintf(w, "Solution: x = %f, y = %f", sol.FirstUnknown, sol.SecondUnknown)
+}
+
+func solveEquations(firstEquation string, secondEquation string) (equation.Solution, error) {
 	parser := *equation.NewParser()
-	e1 := parser.Parse(params["equation1"])
-	e2 := parser.Parse(params["equation1"])
+	e1, err := parser.Parse(firstEquation)
+	if err != nil {
+		return equation.Solution{0, 0}, err
+	}
+
+	e2, err := parser.Parse(secondEquation)
+	if err != nil {
+		return equation.Solution{0, 0}, err
+	}
 
 	solver := *equation.NewSolver()
-	sol := solver.Solve([]equation.Equation{e1, e2})
+	sol, err := solver.Solve([]equation.Equation{e1, e2})
+	if err != nil {
+		return equation.Solution{0, 0}, err
+	}
 
-	fmt.Fprintf(w, "Solution: x = %f, y = %f\n", sol.FirstUnknown, sol.SecondUnknown)
+	return sol, nil
 }
 
 func main() {
 	router := mux.NewRouter()
-	router.HandleFunc("/solve/{equation1},{equation2}", Solve).Methods("GET")
+	router.HandleFunc("/solve/{equation1},{equation2}", solve).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
