@@ -45,8 +45,14 @@ func solveEquations(firstEquation string, secondEquation string) (equation.Solut
 	return sol, nil
 }
 
+func home(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Invalid page: please use %s/solve/{equation1},{equation2}", r.Host)
+}
+
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/solve/{equation1},{equation2}", solve).Methods("GET")
+	router.PathPrefix("/").HandlerFunc(home)
+	// router.HandleFunc("/*", home)
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
